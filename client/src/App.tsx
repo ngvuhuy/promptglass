@@ -5,6 +5,7 @@ import { ChatView } from './components/ChatView';
 import { ChatMode } from './components/ChatMode';
 import { BenchmarkMode } from './components/BenchmarkMode';
 import { SettingsDialog } from './components/SettingsDialog';
+import { DiffView } from './components/DiffView';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Activity, LayoutDashboard } from 'lucide-react';
 import './App.css';
@@ -12,9 +13,11 @@ import './App.css';
 function App() {
   const { requests, isLoading, error, refreshRequests } = useRequests();
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [diffTargetId, setDiffTargetId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('observe');
 
   const selectedRequest = requests.find((r) => r.id === selectedId) || requests[0];
+  const diffRequest = requests.find((r) => r.id === diffTargetId);
 
   if (error) {
     return <div className="flex h-screen items-center justify-center bg-gray-950 text-red-500 font-mono">Error: {error}</div>;
@@ -26,7 +29,8 @@ function App() {
         <ChatMode 
           onMessageSent={() => {
             refreshRequests();
-            setActiveTab('observe'); // Switch back to see the result
+            setActiveTab('observe');
+            setDiffTargetId(null);
           }} 
         />
       );
@@ -37,7 +41,8 @@ function App() {
         <BenchmarkMode 
           onRunComplete={() => {
             refreshRequests();
-            setActiveTab('observe'); // Switch to observe to see the benchmark results
+            setActiveTab('observe');
+            setDiffTargetId(null);
           }} 
         />
       );
@@ -48,6 +53,16 @@ function App() {
         <div className="h-full flex items-center justify-center text-gray-500 font-mono animate-pulse">
           Loading requests...
         </div>
+      );
+    }
+
+    if (selectedRequest && diffRequest) {
+      return (
+        <DiffView 
+          requestA={selectedRequest} 
+          requestB={diffRequest} 
+          onClose={() => setDiffTargetId(null)} 
+        />
       );
     }
 
@@ -71,7 +86,12 @@ function App() {
       <Sidebar 
         requests={requests} 
         selectedId={selectedRequest?.id || null} 
-        onSelect={setSelectedId} 
+        diffTargetId={diffTargetId}
+        onSelect={(id) => {
+          setSelectedId(id);
+          setDiffTargetId(null); // Clear diff when selecting a new base
+        }}
+        onDiffSelect={setDiffTargetId}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
