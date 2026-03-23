@@ -13,7 +13,10 @@ function hashContext(messages: any[]): string {
 }
 
 router.post('/chat/completions', async (req: Request, res: Response) => {
-  const targetUrl = getSetting('TARGET_URL') || process.env.TARGET_URL;
+  const configuredUrl = getSetting('TARGET_URL') || process.env.TARGET_URL;
+  const targetUrl = configuredUrl?.endsWith('/chat/completions')
+    ? configuredUrl
+    : `${configuredUrl}/chat/completions`;
   const targetApiKey = getSetting('TARGET_API_KEY') || process.env.TARGET_API_KEY;
 
   if (!targetUrl) {
