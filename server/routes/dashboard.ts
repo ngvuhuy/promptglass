@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getRequests, getRequestById, saveSetting, getSetting } from '../services/storage.js';
 
-const router = Router();
+const router: Router = Router();
 
 // GET /api/requests
 router.get('/requests', (req: Request, res: Response) => {
@@ -19,7 +19,7 @@ router.get('/requests', (req: Request, res: Response) => {
 // GET /api/requests/:id
 router.get('/requests/:id', (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid request ID' });
       return;

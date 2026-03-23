@@ -91,7 +91,7 @@ router.post('/chat/completions', async (req: Request, res: Response) => {
 
     } else {
       // Non-streaming response handling
-      const responseData = await targetResponse.json();
+      const responseData = (await targetResponse.json()) as any;
       const totalLatency = performance.now() - requestStartTime;
 
       const metrics = {

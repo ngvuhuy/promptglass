@@ -1,5 +1,6 @@
 "use client"
 
+// @ts-expect-error React is used implicitly by JSX/some builders
 import * as React from "react"
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area"
 
