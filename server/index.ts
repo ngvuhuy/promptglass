@@ -1,7 +1,7 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { getDb, closeDb } from './services/db';
+import { getDb, closeDb } from './services/storage.js';
 
 dotenv.config({ path: '../.env' });
 
