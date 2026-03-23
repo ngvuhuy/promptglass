@@ -7,7 +7,6 @@ import { BenchmarkMode } from './components/BenchmarkMode';
 import { SettingsDialog } from './components/SettingsDialog';
 import { DiffView } from './components/DiffView';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
-import { Activity, LayoutDashboard } from 'lucide-react';
 import './App.css';
 
 function App() {
@@ -20,37 +19,37 @@ function App() {
   const diffRequest = requests.find((r) => r.id === diffTargetId);
 
   if (error) {
-    return <div className="flex h-screen items-center justify-center bg-gray-950 text-red-500 font-mono">Error: {error}</div>;
+    return <div className="flex h-screen items-center justify-center bg-background text-destructive font-mono">Error: {error}</div>;
   }
 
   const renderContent = () => {
     if (activeTab === 'chat') {
       return (
-        <ChatMode 
+        <ChatMode
           onMessageSent={() => {
             refreshRequests();
             setActiveTab('observe');
             setDiffTargetId(null);
-          }} 
+          }}
         />
       );
     }
 
     if (activeTab === 'benchmark') {
       return (
-        <BenchmarkMode 
+        <BenchmarkMode
           onRunComplete={() => {
             refreshRequests();
             setActiveTab('observe');
             setDiffTargetId(null);
-          }} 
+          }}
         />
       );
     }
-    
+
     if (isLoading && !selectedRequest) {
       return (
-        <div className="h-full flex items-center justify-center text-gray-500 font-mono animate-pulse">
+        <div className="h-full flex items-center justify-center text-muted-foreground animate-pulse">
           Loading requests...
         </div>
       );
@@ -58,10 +57,10 @@ function App() {
 
     if (selectedRequest && diffRequest) {
       return (
-        <DiffView 
-          requestA={selectedRequest} 
-          requestB={diffRequest} 
-          onClose={() => setDiffTargetId(null)} 
+        <DiffView
+          requestA={selectedRequest}
+          requestB={diffRequest}
+          onClose={() => setDiffTargetId(null)}
         />
       );
     }
@@ -71,10 +70,9 @@ function App() {
     }
 
     return (
-      <div className="h-full flex flex-col items-center justify-center text-gray-500 space-y-4">
-        <Activity className="w-12 h-12 text-gray-700" />
-        <p>Waiting for proxy requests...</p>
-        <code className="text-xs bg-gray-900 p-2 rounded border border-gray-800">
+      <div className="h-full flex flex-col items-center justify-center space-y-6">
+        <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Waiting for proxy requests</p>
+        <code className="text-xs bg-secondary text-foreground px-4 py-2 font-mono">
           POST http://localhost:3001/v1/chat/completions
         </code>
       </div>
@@ -82,32 +80,38 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-gray-950 text-gray-100 font-sans overflow-hidden">
-      <Sidebar 
-        requests={requests} 
-        selectedId={selectedRequest?.id || null} 
+    <div className="flex h-screen w-screen bg-background text-foreground font-sans overflow-hidden">
+      <Sidebar
+        requests={requests}
+        selectedId={selectedRequest?.id || null}
         diffTargetId={diffTargetId}
         onSelect={(id) => {
           setSelectedId(id);
-          setDiffTargetId(null); // Clear diff when selecting a new base
+          setDiffTargetId(null);
         }}
         onDiffSelect={setDiffTargetId}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between px-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
-            <TabsList className="bg-gray-950 border border-gray-800">
-              <TabsTrigger value="observe" className="data-[state=active]:bg-gray-800">
-                <Activity className="w-4 h-4 mr-2" />
+      <div className="flex-1 flex flex-col min-w-0 bg-background">
+        <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-background">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="bg-transparent h-auto p-0 flex gap-2">
+              <TabsTrigger
+                value="observe"
+                className="font-bold uppercase tracking-widest text-xs border border-border rounded-md px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[2px_2px_0px_0px_var(--color-foreground)] transition-all"
+              >
                 Observe
               </TabsTrigger>
-              <TabsTrigger value="chat" className="data-[state=active]:bg-gray-800">
-                <LayoutDashboard className="w-4 h-4 mr-2" />
+              <TabsTrigger
+                value="chat"
+                className="font-bold uppercase tracking-widest text-xs border border-border rounded-md px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[2px_2px_0px_0px_var(--color-foreground)] transition-all"
+              >
                 Chat
               </TabsTrigger>
-              <TabsTrigger value="benchmark" className="data-[state=active]:bg-gray-800">
-                <Activity className="w-4 h-4 mr-2" />
+              <TabsTrigger
+                value="benchmark"
+                className="font-bold uppercase tracking-widest text-xs border border-border rounded-md px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[2px_2px_0px_0px_var(--color-foreground)] transition-all"
+              >
                 Benchmark
               </TabsTrigger>
             </TabsList>

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Settings } from 'lucide-react';
 import { Button } from './ui/button';
 
 export function SettingsDialog() {
@@ -28,10 +27,9 @@ export function SettingsDialog() {
       await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          targetUrl, 
-          // Only send API key if it was changed (not the placeholder '***')
-          ...(targetApiKey !== '***' && { targetApiKey }) 
+        body: JSON.stringify({
+          targetUrl,
+          ...(targetApiKey !== '***' && { targetApiKey })
         }),
       });
       setIsOpen(false);
@@ -44,44 +42,42 @@ export function SettingsDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger render={<button className="p-2 hover:bg-gray-800 rounded-md transition-colors text-gray-400 hover:text-white cursor-pointer" />}>
-        <Settings className="w-5 h-5" />
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-gray-950 border-gray-800 text-gray-100">
+      <DialogTrigger render={<button className="text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer px-4 py-2 border-2 border-foreground rounded-md shadow-[2px_2px_0px_0px_var(--color-foreground)] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[3px_3px_0px_0px_var(--color-foreground)] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none bg-background text-foreground">Settings</button>} />
+      <DialogContent className="sm:max-w-[425px] border-2 border-foreground bg-background text-foreground rounded-md shadow-[8px_8px_0px_0px_var(--color-foreground)]">
         <DialogHeader>
-          <DialogTitle className="text-xl">Proxy Settings</DialogTitle>
+          <DialogTitle className="text-xl font-black uppercase tracking-tighter">Proxy Settings</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-6 py-6">
           <div className="grid gap-2">
-            <Label htmlFor="url">Target LLM URL</Label>
+            <Label htmlFor="url" className="text-xs font-black uppercase tracking-widest text-primary">Target LLM URL</Label>
             <Input
               id="url"
               value={targetUrl}
               onChange={(e) => setTargetUrl(e.target.value)}
-              placeholder="http://localhost:11434/v1/chat/completions"
-              className="bg-gray-900 border-gray-800 text-gray-200"
+              placeholder="http://localhost:11434/v1"
+              className="rounded-none border-border font-mono bg-secondary"
             />
-            <p className="text-xs text-gray-500">
-              The OpenAI-compatible endpoint PromptGlass will forward requests to.
+            <p className="text-[10px] uppercase font-mono text-muted-foreground mt-1">
+              The base URL for the OpenAI-compatible API. PromptGlass will append /chat/completions.
             </p>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="key">Target API Key (Optional)</Label>
+            <Label htmlFor="key" className="text-xs font-black uppercase tracking-widest text-foreground">Target API Key</Label>
             <Input
               id="key"
               type="password"
               value={targetApiKey}
               onChange={(e) => setTargetApiKey(e.target.value)}
               placeholder="sk-..."
-              className="bg-gray-900 border-gray-800 text-gray-200"
+              className="rounded-none border-border font-mono bg-secondary"
             />
           </div>
         </div>
         <div className="flex justify-end">
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             disabled={isSaving}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="rounded-none font-bold uppercase tracking-widest"
           >
             {isSaving ? 'Saving...' : 'Save Settings'}
           </Button>
