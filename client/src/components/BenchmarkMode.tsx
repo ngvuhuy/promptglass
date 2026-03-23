@@ -122,7 +122,7 @@ export function BenchmarkMode({ onRunComplete }: BenchmarkModeProps) {
                       </div>
                       <Slider
                         value={[contextTokens]}
-                        onValueChange={(vals) => setContextTokens((vals as number[])[0])}
+                        onValueChange={(vals) => setContextTokens(Array.isArray(vals) ? vals[0] : (vals as unknown as number))}
                         min={1000}
                         max={128000}
                         step={1000}
