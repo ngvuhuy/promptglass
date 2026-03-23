@@ -1,0 +1,14 @@
+{
+  "name": "promptglass",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LLM Request Inspector & Benchmarking Tool",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter ./server dev\" \"pnpm --filter ./client dev\"",
+    "build": "pnpm --filter ./client build && pnpm --filter ./server build",
+    "start": "NODE_ENV=production node server/dist/index.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
