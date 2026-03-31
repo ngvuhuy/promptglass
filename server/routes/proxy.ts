@@ -24,7 +24,10 @@ router.post('/chat/completions', async (req: Request, res: Response) => {
     return;
   }
 
-  const requestBody = req.body;
+  const requestBody = { ...req.body };
+  if (requestBody.stream === true && !requestBody.stream_options) {
+    requestBody.stream_options = { include_usage: true };
+  }
   const isStream = requestBody.stream === true;
   const contextHash = requestBody.messages ? hashContext(requestBody.messages) : undefined;
 
@@ -72,7 +75,7 @@ router.post('/chat/completions', async (req: Request, res: Response) => {
       res.setHeader('Connection', 'keep-alive');
 
       let lastDbUpdate = 0;
-      const { clientStream, metricsPromise } = processStream(targetResponse, requestStartTime, (body) => {
+      const { clientStream, metricsPromise } = processStream(targetResponse, requestStartTime, requestBody, (body) => {
         const now = Date.now();
         // Throttled update to database during streaming (every 100ms)
         if (now - lastDbUpdate > 100) {
@@ -108,11 +111,17 @@ router.post('/chat/completions', async (req: Request, res: Response) => {
       const responseData = (await targetResponse.json()) as any;
       const totalLatency = performance.now() - requestStartTime;
 
+      let promptTokens = responseData.usage?.prompt_tokens || responseData.usage?.input_tokens || 0;
+      if (!promptTokens && requestBody.messages) {
+        promptTokens = Math.ceil(JSON.stringify(requestBody.messages).length / 4);
+      }
+
       const metrics = {
         ttft: totalLatency,
         totalLatency,
-        tokensPerSecond: 0, // Not applicable for non-streaming in the same way
-        tokenCount: responseData.usage?.completion_tokens || 0,
+        tokensPerSecond: 0, // Not applicable for non-streaming
+        promptPrefillSpeed: (promptTokens && totalLatency > 0) ? (promptTokens / (totalLatency / 1000)) : 0,
+        tokenCount: responseData.usage?.completion_tokens || responseData.usage?.output_tokens || 0,
         interTokenLatencies: [],
         completedAt: new Date().toISOString()
       };

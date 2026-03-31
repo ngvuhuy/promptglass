@@ -12,7 +12,11 @@ export function MetricsPanel({ metrics, isStreaming }: MetricsPanelProps) {
       value: metrics ? `${Math.round(metrics.ttft)}ms` : '---',
     },
     {
-      title: 'Speed',
+      title: 'Prefill Speed',
+      value: metrics && typeof metrics.promptPrefillSpeed === 'number' ? `${metrics.promptPrefillSpeed.toFixed(1)} t/s` : '---',
+    },
+    {
+      title: 'Generation Speed',
       value: metrics ? `${metrics.tokensPerSecond.toFixed(1)} t/s` : '---',
     },
     {

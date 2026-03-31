@@ -12,6 +12,7 @@ export interface ProcessedStream {
 export function processStream(
   response: Response,
   requestStartTime: number,
+  requestBody?: any,
   onChunk?: (body: any) => void
 ): ProcessedStream {
   // Split the stream: one for the client, one for our internal processing
@@ -29,6 +30,7 @@ export function processStream(
       .pipeThrough(new EventSourceParserStream());
 
     let usageTokenCount: number | null = null;
+    let promptTokenCount: number | null = null;
 
     // Node 24 allows async iteration over Web Streams natively
     for await (const event of parserStream as any) {
@@ -38,12 +40,16 @@ export function processStream(
         const data = JSON.parse(event.data);
         const now = performance.now();
 
-        // Check for usage info in the chunk (OpenAI spec)
-        if (data.usage?.completion_tokens) {
-          usageTokenCount = data.usage.completion_tokens;
+        // Check for usage info in the chunk (OpenAI spec and others)
+        const usage = data.usage || data.statistics || data.stats;
+        if (usage) {
+          if (usage.completion_tokens) usageTokenCount = usage.completion_tokens;
+          if (usage.prompt_tokens) promptTokenCount = usage.prompt_tokens;
+          if (usage.input_tokens) promptTokenCount = usage.input_tokens; // Anthropic/others
+          if (usage.output_tokens) usageTokenCount = usage.output_tokens;
         }
 
-        const content = data.choices?.[0]?.delta?.content || '';
+        const content = data.choices?.[0]?.delta?.content || data.delta?.content || '';
         if (content) {
           tokenCount++;
           if (firstTokenTime === null) {
@@ -83,11 +89,20 @@ export function processStream(
     const generationTimeMs = totalLatency - ttft;
     const finalTokenCount = usageTokenCount ?? tokenCount;
 
+    // Estimate prompt token count if not provided by response
+    if (promptTokenCount === null && requestBody?.messages) {
+      const promptText = JSON.stringify(requestBody.messages);
+      promptTokenCount = Math.ceil(promptText.length / 4); // Basic estimation
+    }
+
+    const prefillSpeed = (promptTokenCount && ttft > 0) ? (promptTokenCount / (ttft / 1000)) : 0;
+
     return {
       metrics: {
         ttft,
         totalLatency,
         tokensPerSecond: generationTimeMs > 0 ? (finalTokenCount / (generationTimeMs / 1000)) : 0,
+        promptPrefillSpeed: prefillSpeed,
         tokenCount: finalTokenCount,
         interTokenLatencies,
         completedAt: new Date().toISOString(),

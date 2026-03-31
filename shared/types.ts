@@ -2,6 +2,7 @@ export interface Metrics {
   ttft: number; // Time to first token (ms)
   totalLatency: number; // Total request-response time (ms)
   tokensPerSecond: number;
+  promptPrefillSpeed: number; // Tokens per second reading context window
   tokenCount: number;
   interTokenLatencies: number[]; // ms between tokens
   completedAt: string;
