@@ -11,7 +11,8 @@ export interface ProcessedStream {
  */
 export function processStream(
   response: Response,
-  requestStartTime: number
+  requestStartTime: number,
+  onChunk?: (body: any) => void
 ): ProcessedStream {
   // Split the stream: one for the client, one for our internal processing
   const [clientStream, internalStream] = response.body!.tee();
@@ -27,21 +28,31 @@ export function processStream(
       .pipeThrough(new TextDecoderStream())
       .pipeThrough(new EventSourceParserStream());
 
+    let usageTokenCount: number | null = null;
+
     // Node 24 allows async iteration over Web Streams natively
     for await (const event of parserStream as any) {
       if (event.data === '[DONE]') continue;
 
       try {
         const data = JSON.parse(event.data);
-        tokenCount++;
         const now = performance.now();
 
-        if (firstTokenTime === null) {
-          firstTokenTime = now;
-        } else {
-          interTokenLatencies.push(now - lastTokenTime);
+        // Check for usage info in the chunk (OpenAI spec)
+        if (data.usage?.completion_tokens) {
+          usageTokenCount = data.usage.completion_tokens;
         }
-        lastTokenTime = now;
+
+        const content = data.choices?.[0]?.delta?.content || '';
+        if (content) {
+          tokenCount++;
+          if (firstTokenTime === null) {
+            firstTokenTime = now;
+          } else {
+            interTokenLatencies.push(now - lastTokenTime);
+          }
+          lastTokenTime = now;
+        }
 
         // Reconstruct the full response body
         if (!fullResponseBody) {
@@ -54,8 +65,12 @@ export function processStream(
             };
             delete choice.delta;
           }
-        } else if (data.choices?.[0]?.delta?.content) {
-          fullResponseBody.choices[0].message.content += data.choices[0].delta.content;
+        } else if (content) {
+          fullResponseBody.choices[0].message.content += content;
+        }
+
+        if (onChunk && fullResponseBody) {
+          onChunk(fullResponseBody);
         }
       } catch (e) {
         // Ignore malformed chunks
@@ -66,13 +81,14 @@ export function processStream(
     const totalLatency = now - requestStartTime;
     const ttft = firstTokenTime ? firstTokenTime - requestStartTime : totalLatency;
     const generationTimeMs = totalLatency - ttft;
+    const finalTokenCount = usageTokenCount ?? tokenCount;
 
     return {
       metrics: {
         ttft,
         totalLatency,
-        tokensPerSecond: generationTimeMs > 0 ? (tokenCount / (generationTimeMs / 1000)) : 0,
-        tokenCount,
+        tokensPerSecond: generationTimeMs > 0 ? (finalTokenCount / (generationTimeMs / 1000)) : 0,
+        tokenCount: finalTokenCount,
         interTokenLatencies,
         completedAt: new Date().toISOString(),
       },

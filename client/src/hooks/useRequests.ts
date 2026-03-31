@@ -23,8 +23,8 @@ export function useRequests() {
   useEffect(() => {
     fetchRequests();
     
-    // Simple polling for Observe mode (updates every 2 seconds)
-    const interval = setInterval(fetchRequests, 2000);
+    // Simple polling for Observe mode (updates every 1 second)
+    const interval = setInterval(fetchRequests, 1000);
     return () => clearInterval(interval);
   }, [fetchRequests]);
 

@@ -42,6 +42,10 @@ export function ChatMode({ onMessageSent }: ChatModeProps) {
         throw new Error(`Failed to send message: ${await response.text()}`);
       }
 
+      // Signal that the message was sent so we can switch views
+      onMessageSent();
+      setPrompt('');
+
       const reader = response.body?.getReader();
       if (reader) {
         while (true) {
@@ -49,9 +53,6 @@ export function ChatMode({ onMessageSent }: ChatModeProps) {
           if (done) break;
         }
       }
-
-      setPrompt('');
-      onMessageSent();
     } catch (err: any) {
       setError(err.message);
     } finally {

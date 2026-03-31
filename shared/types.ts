@@ -15,8 +15,8 @@ export interface StoredRequest {
   createdAt: string;
   contextHash: string | null;
   requestBody: any;
-  responseBody: any;
-  metrics: Metrics;
+  responseBody?: any;
+  metrics?: Metrics;
 }
 
 export interface Settings {

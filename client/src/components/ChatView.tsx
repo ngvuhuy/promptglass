@@ -7,6 +7,8 @@ interface ChatViewProps {
 }
 
 export function ChatView({ request }: ChatViewProps) {
+  const isStreaming = !request.metrics;
+
   // Extract the last user message or the prompt
   const messages = request.requestBody.messages || [];
   const systemPrompt = messages.find((m: any) => m.role === 'system')?.content;
@@ -22,7 +24,7 @@ export function ChatView({ request }: ChatViewProps) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
-      <MetricsPanel metrics={request.metrics} />
+      <MetricsPanel metrics={request.metrics} isStreaming={isStreaming} />
 
       <div className="flex-1 overflow-auto p-8 space-y-12 max-w-5xl mx-auto w-full">
         {systemPrompt && (
@@ -42,7 +44,12 @@ export function ChatView({ request }: ChatViewProps) {
         </section>
 
         <section className="space-y-4 flex-1 flex flex-col min-h-0">
-          <h3 className="text-xs font-black uppercase tracking-widest text-foreground border-b border-border pb-2">Assistant</h3>
+          <div className="flex items-center justify-between border-b border-border pb-2">
+            <h3 className="text-xs font-black uppercase tracking-widest text-foreground">Assistant</h3>
+            {isStreaming && (
+              <span className="text-[10px] font-mono text-primary animate-pulse uppercase tracking-widest">Streaming...</span>
+            )}
+          </div>
           <div className="flex-1 min-h-0 bg-secondary">
             <TokenStream content={responseContent} />
           </div>

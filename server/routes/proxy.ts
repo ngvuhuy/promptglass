@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { saveRequest, getSetting } from '../services/storage.js';
+import { saveRequest, getSetting, updateRequest } from '../services/storage.js';
 import { processStream } from '../services/stream.js';
 import crypto from 'node:crypto';
 import { RequestMode } from '../../shared/types.js';
@@ -48,6 +48,9 @@ router.post('/chat/completions', async (req: Request, res: Response) => {
 
   const requestStartTime = performance.now();
 
+  // Save request immediately as "pending"
+  const requestId = saveRequest(mode, requestBody, undefined, undefined, contextHash);
+
   try {
     const targetResponse = await fetch(targetUrl, {
       method: 'POST',
@@ -68,7 +71,15 @@ router.post('/chat/completions', async (req: Request, res: Response) => {
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      const { clientStream, metricsPromise } = processStream(targetResponse, requestStartTime);
+      let lastDbUpdate = 0;
+      const { clientStream, metricsPromise } = processStream(targetResponse, requestStartTime, (body) => {
+        const now = Date.now();
+        // Throttled update to database during streaming (every 100ms)
+        if (now - lastDbUpdate > 100) {
+          updateRequest(requestId, body);
+          lastDbUpdate = now;
+        }
+      });
 
       const reader = clientStream.getReader();
 
@@ -90,7 +101,7 @@ router.post('/chat/completions', async (req: Request, res: Response) => {
 
       // Wait for the stream to finish and metrics to be computed, then save
       const { metrics, responseBody } = await metricsPromise;
-      saveRequest(mode, requestBody, responseBody, metrics, contextHash);
+      updateRequest(requestId, responseBody, metrics);
 
     } else {
       // Non-streaming response handling
@@ -107,7 +118,7 @@ router.post('/chat/completions', async (req: Request, res: Response) => {
       };
 
       res.json(responseData);
-      saveRequest(mode, requestBody, responseData, metrics, contextHash);
+      updateRequest(requestId, responseData, metrics);
     }
 
   } catch (error: any) {

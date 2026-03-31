@@ -59,8 +59,8 @@ function initSchema(db: Database.Database) {
 export function saveRequest(
   mode: RequestMode,
   requestBody: any,
-  responseBody: any,
-  metrics: Metrics,
+  responseBody?: any,
+  metrics?: Metrics,
   contextHash?: string
 ): number {
   const db = getDb();
@@ -70,11 +70,39 @@ export function saveRequest(
   `).run(
     mode,
     JSON.stringify(requestBody),
-    JSON.stringify(responseBody),
-    JSON.stringify(metrics),
+    responseBody ? JSON.stringify(responseBody) : null,
+    metrics ? JSON.stringify(metrics) : null,
     contextHash || null
   );
   return info.lastInsertRowid as number;
+}
+
+export function updateRequest(
+  id: number,
+  responseBody: any,
+  metrics?: Metrics
+) {
+  const db = getDb();
+  if (metrics) {
+    db.prepare(`
+      UPDATE requests 
+      SET response_body = ?, metrics = ?
+      WHERE id = ?
+    `).run(
+      JSON.stringify(responseBody),
+      JSON.stringify(metrics),
+      id
+    );
+  } else {
+    db.prepare(`
+      UPDATE requests 
+      SET response_body = ?
+      WHERE id = ?
+    `).run(
+      JSON.stringify(responseBody),
+      id
+    );
+  }
 }
 
 export function getRequests(limit = 50, offset = 0): StoredRequest[] {
@@ -89,8 +117,8 @@ export function getRequests(limit = 50, offset = 0): StoredRequest[] {
     createdAt: row.created_at,
     contextHash: row.context_hash,
     requestBody: JSON.parse(row.request_body),
-    responseBody: JSON.parse(row.response_body),
-    metrics: JSON.parse(row.metrics),
+    responseBody: row.response_body ? JSON.parse(row.response_body) : undefined,
+    metrics: row.metrics ? JSON.parse(row.metrics) : undefined,
   }));
 }
 
@@ -105,8 +133,8 @@ export function getRequestById(id: number): StoredRequest | null {
     createdAt: row.created_at,
     contextHash: row.context_hash,
     requestBody: JSON.parse(row.request_body),
-    responseBody: JSON.parse(row.response_body),
-    metrics: JSON.parse(row.metrics),
+    responseBody: row.response_body ? JSON.parse(row.response_body) : undefined,
+    metrics: row.metrics ? JSON.parse(row.metrics) : undefined,
   };
 }
 

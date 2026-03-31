@@ -79,22 +79,22 @@ export function DiffView({ requestA, requestB, onClose }: DiffViewProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatDiff
               label="Time To First Token (ms)"
-              valA={requestA.metrics.ttft}
-              valB={requestB.metrics.ttft}
+              valA={requestA.metrics?.ttft || 0}
+              valB={requestB.metrics?.ttft || 0}
             />
             <StatDiff
               label="Total Latency (ms)"
-              valA={requestA.metrics.totalLatency}
-              valB={requestB.metrics.totalLatency}
+              valA={requestA.metrics?.totalLatency || 0}
+              valB={requestB.metrics?.totalLatency || 0}
             />
             <StatDiff
               label="Tokens Per Second"
-              valA={requestA.metrics.tokensPerSecond}
-              valB={requestB.metrics.tokensPerSecond}
+              valA={requestA.metrics?.tokensPerSecond || 0}
+              valB={requestB.metrics?.tokensPerSecond || 0}
               invertColors={true}
             />
           </div>
-          {requestA.metrics.ttft > requestB.metrics.ttft * 1.5 && (
+          {requestA.metrics && requestB.metrics && requestA.metrics.ttft > requestB.metrics.ttft * 1.5 && (
             <div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900/50 rounded-md text-sm text-green-700 dark:text-green-400">
               Target request is significantly faster. High probability of a KV Cache hit!
             </div>

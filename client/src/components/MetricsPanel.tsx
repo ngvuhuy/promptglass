@@ -1,26 +1,27 @@
 import type { Metrics } from '../../../shared/types.js';
 
 interface MetricsPanelProps {
-  metrics: Metrics;
+  metrics?: Metrics;
+  isStreaming?: boolean;
 }
 
-export function MetricsPanel({ metrics }: MetricsPanelProps) {
+export function MetricsPanel({ metrics, isStreaming }: MetricsPanelProps) {
   const statCards = [
     {
       title: 'TTFT',
-      value: `${Math.round(metrics.ttft)}ms`,
+      value: metrics ? `${Math.round(metrics.ttft)}ms` : '---',
     },
     {
       title: 'Speed',
-      value: `${metrics.tokensPerSecond.toFixed(1)} t/s`,
+      value: metrics ? `${metrics.tokensPerSecond.toFixed(1)} t/s` : '---',
     },
     {
       title: 'Latency',
-      value: `${Math.round(metrics.totalLatency)}ms`,
+      value: metrics ? `${Math.round(metrics.totalLatency)}ms` : '---',
     },
     {
       title: 'Tokens',
-      value: metrics.tokenCount.toString(),
+      value: metrics ? metrics.tokenCount.toString() : '---',
     },
   ];
 
@@ -31,7 +32,7 @@ export function MetricsPanel({ metrics }: MetricsPanelProps) {
           <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">
             {stat.title}
           </span>
-          <span className="text-2xl font-mono font-bold text-foreground tracking-tighter">
+          <span className={`text-2xl font-mono font-bold tracking-tighter ${!metrics && isStreaming ? 'text-primary animate-pulse' : 'text-foreground'}`}>
             {stat.value}
           </span>
         </div>

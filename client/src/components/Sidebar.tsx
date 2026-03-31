@@ -48,10 +48,10 @@ export function Sidebar({ requests, selectedId, diffTargetId, onSelect, onDiffSe
 
                 <div className="flex items-center justify-between w-full">
                   <span className="text-xs font-mono">
-                    {req.metrics.tokenCount} TKNS
+                    {req.metrics ? `${req.metrics.tokenCount} TKNS` : 'PENDING'}
                   </span>
                   <span className="text-xs font-mono">
-                    {req.metrics.ttft > 0 ? `${Math.round(req.metrics.ttft)}ms` : '---'}
+                    {req.metrics && req.metrics.ttft > 0 ? `${Math.round(req.metrics.ttft)}ms` : '---'}
                   </span>
                 </div>
 
