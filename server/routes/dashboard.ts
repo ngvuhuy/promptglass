@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getRequests, getRequestById, saveSetting, getSetting } from '../services/storage.js';
+import { getRequests, getRequestById, saveSetting, getSetting, deleteRequest, deleteRequests } from '../services/storage.js';
 
 const router: Router = Router();
 
@@ -33,6 +33,38 @@ router.get('/requests/:id', (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching request:', error);
     res.status(500).json({ error: 'Failed to fetch request' });
+  }
+});
+
+// DELETE /api/requests/:id
+router.delete('/requests/:id', (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) {
+      res.status(400).json({ error: 'Invalid request ID' });
+      return;
+    }
+    deleteRequest(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting request:', error);
+    res.status(500).json({ error: 'Failed to delete request' });
+  }
+});
+
+// DELETE /api/requests
+router.delete('/requests', (req: Request, res: Response) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ error: 'Invalid request IDs' });
+      return;
+    }
+    deleteRequests(ids);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting requests:', error);
+    res.status(500).json({ error: 'Failed to delete requests' });
   }
 });
 

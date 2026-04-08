@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
 import './App.css';
 
 function App() {
-  const { requests, isLoading, error, refreshRequests } = useRequests();
+  const { requests, isLoading, error, refreshRequests, deleteRequests } = useRequests();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [diffTargetId, setDiffTargetId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('observe');
@@ -90,6 +90,7 @@ function App() {
           setDiffTargetId(null);
         }}
         onDiffSelect={setDiffTargetId}
+        onDelete={deleteRequests}
       />
 
       <div className="flex-1 flex flex-col min-w-0 bg-background">

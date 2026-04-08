@@ -28,5 +28,19 @@ export function useRequests() {
     return () => clearInterval(interval);
   }, [fetchRequests]);
 
-  return { requests, isLoading, error, refreshRequests: fetchRequests };
+  const deleteRequests = useCallback(async (ids: number[]) => {
+    try {
+      const response = await fetch('/api/requests', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      if (!response.ok) throw new Error('Failed to delete requests');
+      await fetchRequests();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }, [fetchRequests]);
+
+  return { requests, isLoading, error, refreshRequests: fetchRequests, deleteRequests };
 }

@@ -138,6 +138,18 @@ export function getRequestById(id: number): StoredRequest | null {
   };
 }
 
+export function deleteRequest(id: number) {
+  const db = getDb();
+  db.prepare('DELETE FROM requests WHERE id = ?').run(id);
+}
+
+export function deleteRequests(ids: number[]) {
+  if (ids.length === 0) return;
+  const db = getDb();
+  const placeholders = ids.map(() => '?').join(',');
+  db.prepare(`DELETE FROM requests WHERE id IN (${placeholders})`).run(...ids);
+}
+
 export function saveSetting(key: string, value: string) {
   const db = getDb();
   db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value);
