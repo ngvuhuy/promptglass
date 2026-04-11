@@ -14,18 +14,56 @@ interface SidebarProps {
 
 export function Sidebar({ requests, selectedId, diffTargetId, onSelect, onDiffSelect, onDelete }: SidebarProps) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
 
-  const toggleSelect = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const isAllSelected = requests.length > 0 && selectedIds.size === requests.length;
+
+  const toggleSelect = (id: number, e: React.MouseEvent | React.ChangeEvent | React.UIEvent) => {
+    if ('stopPropagation' in e) e.stopPropagation();
     const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
+    const isShiftKey = 'shiftKey' in e && (e as React.MouseEvent).shiftKey;
+
+    if (isShiftKey && lastSelectedId !== null) {
+      const currentIndex = requests.findIndex(r => r.id === id);
+      const lastIndex = requests.findIndex(r => r.id === lastSelectedId);
+      if (currentIndex !== -1 && lastIndex !== -1) {
+        const start = Math.min(currentIndex, lastIndex);
+        const end = Math.max(currentIndex, lastIndex);
+
+        const rangeIds = requests.slice(start, end + 1).map(r => r.id);
+        const shouldSelect = !selectedIds.has(id);
+
+        rangeIds.forEach(rangeId => {
+          if (shouldSelect) {
+            newSelected.add(rangeId);
+          } else {
+            newSelected.delete(rangeId);
+          }
+        });
+      }
     } else {
-      newSelected.add(id);
+      if (newSelected.has(id)) {
+        newSelected.delete(id);
+      } else {
+        newSelected.add(id);
+      }
     }
+
     setSelectedIds(newSelected);
     setIsSelecting(newSelected.size > 0);
+    setLastSelectedId(id);
+  };
+
+  const toggleAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(new Set());
+      setIsSelecting(false);
+    } else {
+      const allIds = requests.map(r => r.id);
+      setSelectedIds(new Set(allIds));
+      setIsSelecting(true);
+    }
   };
 
   const handleDelete = () => {
@@ -54,6 +92,12 @@ export function Sidebar({ requests, selectedId, diffTargetId, onSelect, onDiffSe
             {selectedIds.size} selected
           </span>
           <div className="flex gap-2">
+            <button
+              onClick={toggleAll}
+              className="text-[10px] font-bold uppercase px-2 py-1 bg-background border border-border hover:bg-muted transition-colors"
+            >
+              {isAllSelected ? 'None' : 'All'}
+            </button>
             <button
               onClick={cancelSelection}
               className="text-[10px] font-bold uppercase px-2 py-1 bg-background border border-border hover:bg-muted transition-colors"
@@ -91,7 +135,11 @@ export function Sidebar({ requests, selectedId, diffTargetId, onSelect, onDiffSe
             return (
               <button
                 key={req.id}
-                onClick={() => !isSelecting && onSelect(req.id)}
+                onClick={(e) => isSelecting ? toggleSelect(req.id, e) : onSelect(req.id)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  toggleSelect(req.id, e);
+                }}
                 className={itemClass}
               >
                 <div className="flex items-center justify-between w-full">
