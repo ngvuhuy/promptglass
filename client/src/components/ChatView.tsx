@@ -1,12 +1,15 @@
 import type { StoredRequest } from '../../../shared/types.js';
 import { MetricsPanel } from './MetricsPanel';
 import { TokenStream } from './TokenStream';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 
 interface ChatViewProps {
   request: StoredRequest;
+  viewMode: 'pretty' | 'raw';
+  onViewModeChange: (mode: 'pretty' | 'raw') => void;
 }
 
-export function ChatView({ request }: ChatViewProps) {
+export function ChatView({ request, viewMode, onViewModeChange }: ChatViewProps) {
   const isStreaming = !request.metrics;
 
   // Extract the last user message or the prompt
@@ -24,36 +27,76 @@ export function ChatView({ request }: ChatViewProps) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
-      <MetricsPanel metrics={request.metrics} isStreaming={isStreaming} />
+      <div className="flex items-center justify-between pr-6 border-b border-border">
+        <div className="flex-1">
+          <MetricsPanel metrics={request.metrics} isStreaming={isStreaming} />
+        </div>
+        <Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as 'pretty' | 'raw')} className="ml-4">
+          <TabsList className="bg-secondary/50 p-1">
+            <TabsTrigger
+              value="pretty"
+              className="text-[10px] font-black uppercase tracking-widest px-3 py-1 data-[state=active]:bg-background"
+            >
+              Pretty
+            </TabsTrigger>
+            <TabsTrigger
+              value="raw"
+              className="text-[10px] font-black uppercase tracking-widest px-3 py-1 data-[state=active]:bg-background"
+            >
+              Raw JSON
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-      <div className="flex-1 overflow-auto p-8 space-y-12 max-w-5xl mx-auto w-full">
-        {systemPrompt && (
-          <section className="space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground border-b border-border pb-2">System</h3>
-            <div className="p-6 bg-secondary text-sm font-mono whitespace-pre-wrap leading-relaxed">
-              {systemPrompt}
-            </div>
-          </section>
-        )}
-
-        <section className="space-y-4">
-          <h3 className="text-xs font-black uppercase tracking-widest text-primary border-b border-border pb-2">User</h3>
-          <div className="p-6 bg-secondary text-sm font-mono whitespace-pre-wrap leading-relaxed text-foreground">
-            {userPrompt}
-          </div>
-        </section>
-
-        <section className="space-y-4 flex-1 flex flex-col min-h-0">
-          <div className="flex items-center justify-between border-b border-border pb-2">
-            <h3 className="text-xs font-black uppercase tracking-widest text-foreground">Assistant</h3>
-            {isStreaming && (
-              <span className="text-[10px] font-mono text-primary animate-pulse uppercase tracking-widest">Streaming...</span>
+      <div className="flex-1 overflow-auto p-8 max-w-5xl mx-auto w-full">
+        {viewMode === 'pretty' ? (
+          <div className="space-y-12 w-full">
+            {systemPrompt && (
+              <section className="space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground border-b border-border pb-2">System</h3>
+                <div className="p-6 bg-secondary text-sm font-mono whitespace-pre-wrap leading-relaxed">
+                  {systemPrompt}
+                </div>
+              </section>
             )}
+
+            <section className="space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-primary border-b border-border pb-2">User</h3>
+              <div className="p-6 bg-secondary text-sm font-mono whitespace-pre-wrap leading-relaxed text-foreground">
+                {userPrompt}
+              </div>
+            </section>
+
+            <section className="space-y-4 flex-1 flex flex-col min-h-0">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <h3 className="text-xs font-black uppercase tracking-widest text-foreground">Assistant</h3>
+                {isStreaming && (
+                  <span className="text-[10px] font-mono text-primary animate-pulse uppercase tracking-widest">Streaming...</span>
+                )}
+              </div>
+              <div className="flex-1 min-h-0 bg-secondary">
+                <TokenStream content={responseContent} />
+              </div>
+            </section>
           </div>
-          <div className="flex-1 min-h-0 bg-secondary">
-            <TokenStream content={responseContent} />
+        ) : (
+          <div className="space-y-12 w-full font-mono text-xs">
+            <section className="space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-primary border-b border-border pb-2">Request Body</h3>
+              <div className="p-6 bg-secondary overflow-auto max-h-[400px]">
+                <pre>{JSON.stringify(request.requestBody, null, 2)}</pre>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-foreground border-b border-border pb-2">Response Body</h3>
+              <div className="p-6 bg-secondary overflow-auto max-h-[600px]">
+                <pre>{JSON.stringify(request.responseBody, null, 2)}</pre>
+              </div>
+            </section>
           </div>
-        </section>
+        )}
       </div>
     </div>
   );

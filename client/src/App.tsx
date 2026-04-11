@@ -14,6 +14,7 @@ function App() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [diffTargetId, setDiffTargetId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('observe');
+  const [viewMode, setViewMode] = useState<'pretty' | 'raw'>('pretty');
 
   const selectedRequest = requests.find((r) => r.id === selectedId) || requests[0];
   const diffRequest = requests.find((r) => r.id === diffTargetId);
@@ -66,7 +67,7 @@ function App() {
     }
 
     if (selectedRequest) {
-      return <ChatView request={selectedRequest} />;
+      return <ChatView request={selectedRequest} viewMode={viewMode} onViewModeChange={setViewMode} />;
     }
 
     return (
