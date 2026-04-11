@@ -12,10 +12,9 @@ interface ChatViewProps {
 export function ChatView({ request, viewMode, onViewModeChange }: ChatViewProps) {
   const isStreaming = !request.metrics;
 
-  // Extract the last user message or the prompt
-  const messages = request.requestBody.messages || [];
-  const systemPrompt = messages.find((m: any) => m.role === 'system')?.content;
-  const userPrompt = messages.filter((m: any) => m.role === 'user').pop()?.content || 'No user prompt found';
+  // Extract messages or prompt
+  const messages = (request.requestBody.messages || []) as any[];
+  const prompt = request.requestBody.prompt;
 
   // Reconstruct response content
   let responseContent = '';
@@ -52,21 +51,38 @@ export function ChatView({ request, viewMode, onViewModeChange }: ChatViewProps)
       <div className="flex-1 overflow-auto p-8 max-w-5xl mx-auto w-full">
         {viewMode === 'pretty' ? (
           <div className="space-y-12 w-full">
-            {systemPrompt && (
+            {prompt && (
               <section className="space-y-4">
-                <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground border-b border-border pb-2">System</h3>
-                <div className="p-6 bg-secondary text-sm font-mono whitespace-pre-wrap leading-relaxed">
-                  {systemPrompt}
+                <h3 className="text-xs font-black uppercase tracking-widest text-primary border-b border-border pb-2">Prompt</h3>
+                <div className="p-6 bg-secondary text-sm font-mono whitespace-pre-wrap leading-relaxed text-foreground">
+                  {prompt}
                 </div>
               </section>
             )}
 
-            <section className="space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-widest text-primary border-b border-border pb-2">User</h3>
-              <div className="p-6 bg-secondary text-sm font-mono whitespace-pre-wrap leading-relaxed text-foreground">
-                {userPrompt}
-              </div>
-            </section>
+            {messages.map((message, index) => (
+              <section key={index} className="space-y-4">
+                <h3 className={`text-xs font-black uppercase tracking-widest border-b border-border pb-2 ${message.role === 'system' ? 'text-muted-foreground' :
+                  message.role === 'user' ? 'text-primary' :
+                    'text-foreground'
+                  }`}>
+                  {message.role}
+                </h3>
+                <div className={`p-6 bg-secondary text-sm font-mono whitespace-pre-wrap leading-relaxed ${message.role === 'user' ? 'text-foreground' : ''
+                  }`}>
+                  {typeof message.content === 'string' ? message.content : JSON.stringify(message.content, null, 2)}
+                </div>
+              </section>
+            ))}
+
+            {!prompt && messages.length === 0 && (
+              <section className="space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-widest text-primary border-b border-border pb-2">User</h3>
+                <div className="p-6 bg-secondary text-sm font-mono whitespace-pre-wrap leading-relaxed text-foreground">
+                  No user prompt found
+                </div>
+              </section>
+            )}
 
             <section className="space-y-4 flex-1 flex flex-col min-h-0">
               <div className="flex items-center justify-between border-b border-border pb-2">
