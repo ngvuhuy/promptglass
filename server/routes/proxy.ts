@@ -7,29 +7,41 @@ import { RequestMode } from '../../shared/types.js';
 const router: Router = Router();
 
 // Helper to hash context for cache hit detection
-function hashContext(messages: any[]): string {
-  const content = JSON.stringify(messages);
+function hashContext(body: any): string {
+  // Handle Chat (messages), Completions (prompt), and Responses (instructions + input)
+  const context = body.messages || body.prompt || { instructions: body.instructions, input: body.input };
+  const content = JSON.stringify(context);
   return crypto.createHash('sha256').update(content).digest('hex');
 }
 
-router.post('/chat/completions', async (req: Request, res: Response) => {
+async function handleProxy(req: Request, res: Response, endpoint: 'chat/completions' | 'responses') {
   const configuredUrl = getSetting('TARGET_URL') || process.env.TARGET_URL;
-  const targetUrl = configuredUrl?.endsWith('/chat/completions')
-    ? configuredUrl
-    : `${configuredUrl}/chat/completions`;
+  
+  // Strip trailing slashes and common suffixes to get the base URL
+  let baseUrl = (configuredUrl || '').replace(/\/+$/, '');
+  if (baseUrl.endsWith('/chat/completions')) {
+    baseUrl = baseUrl.replace(/\/chat\/completions$/, '');
+  } else if (baseUrl.endsWith('/responses')) {
+    baseUrl = baseUrl.replace(/\/responses$/, '');
+  }
+  
+  const targetUrl = `${baseUrl}/${endpoint}`;
   const targetApiKey = getSetting('TARGET_API_KEY') || process.env.TARGET_API_KEY;
 
-  if (!targetUrl) {
+  if (!baseUrl) {
     res.status(500).json({ error: 'Target URL is not configured.' });
     return;
   }
 
   const requestBody = { ...req.body };
-  if (requestBody.stream === true && !requestBody.stream_options) {
+  
+  // OpenAI spec for chat/completions include_usage
+  if (endpoint === 'chat/completions' && requestBody.stream === true && !requestBody.stream_options) {
     requestBody.stream_options = { include_usage: true };
   }
+  
   const isStream = requestBody.stream === true;
-  const contextHash = requestBody.messages ? hashContext(requestBody.messages) : undefined;
+  const contextHash = hashContext(requestBody);
 
   // Determine mode from custom header, defaulting to 'observe'
   const modeHeader = req.headers['x-promptglass-mode'] as string;
@@ -112,8 +124,9 @@ router.post('/chat/completions', async (req: Request, res: Response) => {
       const totalLatency = performance.now() - requestStartTime;
 
       let promptTokens = responseData.usage?.prompt_tokens || responseData.usage?.input_tokens || 0;
-      if (!promptTokens && requestBody.messages) {
-        promptTokens = Math.ceil(JSON.stringify(requestBody.messages).length / 4);
+      if (!promptTokens) {
+        const context = requestBody.messages || (requestBody.instructions + (requestBody.input || ''));
+        promptTokens = Math.ceil(JSON.stringify(context).length / 4);
       }
 
       const metrics = {
@@ -134,6 +147,9 @@ router.post('/chat/completions', async (req: Request, res: Response) => {
     console.error('Proxy Error:', error);
     res.status(500).json({ error: 'Failed to proxy request', details: error.message });
   }
-});
+}
+
+router.post('/chat/completions', (req, res) => handleProxy(req, res, 'chat/completions'));
+router.post('/responses', (req, res) => handleProxy(req, res, 'responses'));
 
 export default router;

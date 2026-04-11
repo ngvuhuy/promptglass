@@ -7,11 +7,14 @@ interface TokenStreamProps {
 export function TokenStream({ content }: TokenStreamProps) {
   // Simple parser to separate <think> tags from regular content
   // This ensures that special tokens are highly visible
-  const parseTokens = (text: string) => {
+  const parseTokens = (text: any) => {
     if (!text) return [];
     
+    // Ensure text is a string to avoid .split errors
+    const str = typeof text === 'string' ? text : String(text);
+    
     // Split by <think> and </think> keeping the delimiters
-    const parts = text.split(/(<think>|<\/think>)/g);
+    const parts = str.split(/(<think>|<\/think>)/g);
     let inThinkBlock = false;
     
     return parts.map((part, index) => {

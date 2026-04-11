@@ -39,8 +39,11 @@ export function processStream(
       try {
         const data = JSON.parse(event.data);
         const now = performance.now();
+        const eventType = (event as any).event;
 
         // Check for usage info in the chunk (OpenAI spec and others)
+        // Chat Completions usage is often in the last chunk or every chunk with stream_options
+        // Responses API usage is in the response.completed event
         const usage = data.usage || data.statistics || data.stats;
         if (usage) {
           if (usage.completion_tokens) usageTokenCount = usage.completion_tokens;
@@ -49,7 +52,18 @@ export function processStream(
           if (usage.output_tokens) usageTokenCount = usage.output_tokens;
         }
 
-        const content = data.choices?.[0]?.delta?.content || data.delta?.content || '';
+        // Extract content based on API type
+        let content = '';
+        if (eventType === 'response.output_text.delta') {
+          content = data.delta || '';
+        } else if (eventType === 'response.reasoning_summary_text.delta') {
+          // Could handle reasoning separately if needed, but for now just append
+          content = data.delta || '';
+        } else {
+          // Fallback to Chat Completions format
+          content = data.choices?.[0]?.delta?.content || data.delta?.content || '';
+        }
+
         if (content) {
           tokenCount++;
           if (firstTokenTime === null) {
@@ -63,6 +77,8 @@ export function processStream(
         // Reconstruct the full response body
         if (!fullResponseBody) {
           fullResponseBody = { ...data };
+          
+          // Initialize for Chat Completions
           const choice = fullResponseBody.choices?.[0];
           if (choice?.delta) {
             choice.message = {
@@ -71,8 +87,43 @@ export function processStream(
             };
             delete choice.delta;
           }
-        } else if (content) {
-          fullResponseBody.choices[0].message.content += content;
+          
+          // Initialize for Responses API
+          if (eventType?.startsWith('response.')) {
+            fullResponseBody.output = fullResponseBody.output || [];
+            if (eventType === 'response.output_text.delta' && content) {
+               fullResponseBody.output.push({
+                 type: 'message',
+                 role: 'assistant',
+                 content: content
+               });
+            }
+          }
+        } else {
+          // Update existing response body
+          if (eventType === 'response.output_text.delta') {
+            const outputItem = fullResponseBody.output?.find((i: any) => i.type === 'message');
+            if (outputItem) {
+              outputItem.content += content;
+            } else {
+              fullResponseBody.output = fullResponseBody.output || [];
+              fullResponseBody.output.push({
+                type: 'message',
+                role: 'assistant',
+                content: content
+              });
+            }
+          } else if (eventType === 'response.completed') {
+            // Take the final response object as the ground truth
+            fullResponseBody = { ...data };
+          } else if (content && fullResponseBody.choices?.[0]?.message) {
+            fullResponseBody.choices[0].message.content += content;
+          }
+          
+          // If we got more usage info later
+          if (usage) {
+             fullResponseBody.usage = { ...fullResponseBody.usage, ...usage };
+          }
         }
 
         if (onChunk && fullResponseBody) {
