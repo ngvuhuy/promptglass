@@ -54,14 +54,17 @@ export function processStream(
 
         // Extract content based on API type
         let content = '';
+
         if (eventType === 'response.output_text.delta') {
           content = data.delta || '';
         } else if (eventType === 'response.reasoning_summary_text.delta') {
-          // Could handle reasoning separately if needed, but for now just append
+          // Some models send summary or reasoning in separate delta events
           content = data.delta || '';
         } else {
           // Fallback to Chat Completions format
-          content = data.choices?.[0]?.delta?.content || data.delta?.content || '';
+          const delta = data.choices?.[0]?.delta || data.delta || {};
+          // Append reasoning_content if it exists
+          content = delta.reasoning_content || delta.content || '';
         }
 
         if (content) {
@@ -77,7 +80,7 @@ export function processStream(
         // Reconstruct the full response body
         if (!fullResponseBody) {
           fullResponseBody = { ...data };
-          
+
           // Initialize for Chat Completions
           const choice = fullResponseBody.choices?.[0];
           if (choice?.delta) {
@@ -87,16 +90,16 @@ export function processStream(
             };
             delete choice.delta;
           }
-          
+
           // Initialize for Responses API
           if (eventType?.startsWith('response.')) {
             fullResponseBody.output = fullResponseBody.output || [];
             if (eventType === 'response.output_text.delta' && content) {
-               fullResponseBody.output.push({
-                 type: 'message',
-                 role: 'assistant',
-                 content: content
-               });
+              fullResponseBody.output.push({
+                type: 'message',
+                role: 'assistant',
+                content: content
+              });
             }
           }
         } else {
@@ -119,10 +122,10 @@ export function processStream(
           } else if (content && fullResponseBody.choices?.[0]?.message) {
             fullResponseBody.choices[0].message.content += content;
           }
-          
+
           // If we got more usage info later
           if (usage) {
-             fullResponseBody.usage = { ...fullResponseBody.usage, ...usage };
+            fullResponseBody.usage = { ...fullResponseBody.usage, ...usage };
           }
         }
 
