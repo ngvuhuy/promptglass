@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "LLM Request Inspector & Benchmarking Tool",
   "bin": {
-    "promptglass": "./cli.js"
+    "promptglass": "cli.js"
   },
   "files": [
     "cli.js",
