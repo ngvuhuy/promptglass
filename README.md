@@ -14,10 +14,6 @@ and record the requests/responses.
 
 ## Installation
 ```bash
-npx @ngvuhuy/promptglass
-```
-or
-```bash
 git clone https://github.com/ngvuhuy/promptglass.git
 cd promptglass
 npm install
