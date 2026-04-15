@@ -5,6 +5,10 @@
     "access": "public"
   },
   "description": "LLM Request Inspector & Benchmarking Tool",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ngvuhuy/promptglass.git"
+  },
   "bin": {
     "promptglass": "cli.js"
   },
