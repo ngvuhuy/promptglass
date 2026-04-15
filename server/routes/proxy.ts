@@ -149,7 +149,7 @@ async function handleProxy(req: Request, res: Response, endpoint: 'chat/completi
   }
 }
 
-router.post('/chat/completions', (req, res) => handleProxy(req, res, 'chat/completions'));
-router.post('/responses', (req, res) => handleProxy(req, res, 'responses'));
+router.post(['/chat/completions', '/v1/chat/completions'], (req, res) => handleProxy(req, res, 'chat/completions'));
+router.post(['/responses', '/v1/responses'], (req, res) => handleProxy(req, res, 'responses'));
 
 export default router;
