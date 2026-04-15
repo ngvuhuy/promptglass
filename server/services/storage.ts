@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { Metrics, RequestMode, StoredRequest } from '../../shared/types.js';
 
@@ -10,7 +11,12 @@ let db: Database.Database | null = null;
 
 export function getDb(dbPath?: string): Database.Database {
   if (db) return db;
-  const defaultPath = path.resolve(__dirname, '../data/promptglass.db');
+
+  // Default to ~/.promptglass/promptglass.db
+  const homeDir = os.homedir();
+  const appDataDir = path.join(homeDir, '.promptglass');
+  const defaultPath = path.join(appDataDir, 'promptglass.db');
+
   const resolvedPath = dbPath ?? process.env.DB_PATH ?? defaultPath;
   const dir = path.dirname(resolvedPath);
 
