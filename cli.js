@@ -7,7 +7,7 @@ import fs from "fs";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const startServer = () => {
-  const serverPath = join(__dirname, "server", "dist", "index.js");
+  const serverPath = join(__dirname, "server", "dist", "server", "index.js");
 
   if (!fs.existsSync(serverPath)) {
     console.error("Error: Production build not found. Please run 'npm run build' first.");

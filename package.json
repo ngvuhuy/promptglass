@@ -1,6 +1,9 @@
 {
-  "name": "promptglass",
+  "name": "@ngvuhuy/promptglass",
   "version": "1.0.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "LLM Request Inspector & Benchmarking Tool",
   "bin": {
     "promptglass": "cli.js"
@@ -15,7 +18,8 @@
   "scripts": {
     "dev": "concurrently --names \"server,client\" --prefix-colors \"yellow,cyan\" \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "build": "npm run build --prefix client && npm run build --prefix server",
-    "start": "NODE_ENV=production node server/dist/index.js"
+    "start": "NODE_ENV=production node server/dist/server/index.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "axios": "^1.13.6",
