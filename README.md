@@ -20,6 +20,16 @@ npx @ngvuhuy/promptglass
 ```
 This will start both the proxy and the frontend on `localhost:3001`
 
+### With Docker
+If you don't have Node installed, you can run Promptglass directly using Docker:
+```bash
+docker run -it --rm \
+  -p 3001:3001 \
+  -v promptglass-data:/root/.promptglass \
+  node:24-slim \
+  npx -y @ngvuhuy/promptglass
+```
+
 ### Local development
 ```bash
 git clone https://github.com/ngvuhuy/promptglass.git
