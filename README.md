@@ -13,6 +13,14 @@ and record the requests/responses.
 - Benchmark the LLM inference with input-heavy and output-heavy benchmark.
 
 ## Installation
+This project requires Node.js v22.5 or newer
+### With npx
+```bash
+npx @ngvuhuy/promptglass
+```
+This will start both the proxy and the frontend on `localhost:3001`
+
+### Local development
 ```bash
 git clone https://github.com/ngvuhuy/promptglass.git
 cd promptglass

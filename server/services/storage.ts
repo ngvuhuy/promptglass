@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -7,9 +7,9 @@ import { Metrics, RequestMode, StoredRequest } from '../../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-let db: Database.Database | null = null;
+let db: DatabaseSync | null = null;
 
-export function getDb(dbPath?: string): Database.Database {
+export function getDb(dbPath?: string): DatabaseSync {
   if (db) return db;
 
   // Default to ~/.promptglass/promptglass.db
@@ -25,9 +25,9 @@ export function getDb(dbPath?: string): Database.Database {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    db = new Database(resolvedPath);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
+    db = new DatabaseSync(resolvedPath);
+    db.exec('PRAGMA journal_mode = WAL');
+    db.exec('PRAGMA foreign_keys = ON');
 
     initSchema(db);
     return db;
@@ -37,8 +37,9 @@ export function getDb(dbPath?: string): Database.Database {
   }
 }
 
-function initSchema(db: Database.Database) {
-  const setup = db.transaction(() => {
+function initSchema(db: DatabaseSync) {
+  db.exec('BEGIN');
+  try {
     db.prepare(`
     CREATE TABLE IF NOT EXISTS requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,9 +58,11 @@ function initSchema(db: Database.Database) {
       value TEXT NOT NULL
     );
   `).run();
-  });
-
-  setup();
+    db.exec('COMMIT');
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
 }
 
 export function saveRequest(
@@ -173,3 +176,4 @@ export function closeDb() {
     db = null;
   }
 }
+

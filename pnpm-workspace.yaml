@@ -2,5 +2,3 @@ packages:
   - 'client'
   - 'server'
 
-onlyBuiltDependencies:
-  - better-sqlite3
