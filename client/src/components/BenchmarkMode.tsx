@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Slider } from './ui/slider';
-import frankensteinText from '../../../benchmarks/gutenberg/frankenstein.txt?raw';
 
 interface BenchmarkModeProps {
   onRunComplete: () => void;
@@ -52,15 +51,23 @@ export function BenchmarkMode({ onRunComplete }: BenchmarkModeProps) {
     context: {
       title: 'Context Heavy (Gutenberg)',
       desc: 'Sends a large block of text from Frankenstein to test prefill speed.',
-      action: () => {
-        const charCount = contextTokens * 4;
-        let payload = frankensteinText;
-        while (payload.length < charCount) {
-          payload += '\n\n' + frankensteinText;
-        }
+      action: async () => {
+        setIsRunning(true);
+        try {
+          const res = await fetch('/frankenstein.txt');
+          const text = await res.text();
+          const charCount = contextTokens * 4;
+          let payload = text;
+          while (payload.length < charCount) {
+            payload += '\n\n' + text;
+          }
 
-        const slicedText = payload.slice(0, charCount);
-        runBenchmark(`${slicedText}\n\nBased on the text above, who is Frankenstein? Summarize in one sentence.`, 1);
+          const slicedText = payload.slice(0, charCount);
+          await runBenchmark(`${slicedText}\n\nBased on the text above, who is Frankenstein? Summarize in one sentence.`, 1);
+        } catch (e) {
+          console.error('Failed to fetch benchmark text', e);
+          setIsRunning(false);
+        }
       }
     },
     latency: {
