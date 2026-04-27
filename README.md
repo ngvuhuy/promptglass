@@ -42,6 +42,13 @@ This will start a frontend listening on `localhost:5173` and the proxy on `local
 Then, point the OpenAI URL of your project to `localhost:3001`. Go to the frontend, click on Settings, and put the original upstream LLM provider API there
 (e.g. `https://api.openai.com/v1/`). Optionally, you can set the API key (if blank, the proxy will keep forwarding the API key already inside your request).
 ## Screenshots
+![Observe mode, pretty view](./images/promptglass_observe_pretty.png)
+
+![Observe mode, raw JSON view](./images/promptglass_observe_raw.png)
+
+![Benchmark mode](./images/promptglass_benchmark.png)
+
+![Proxy settings](./images/promptglass_settings.png)
 
 ## Example use cases
 - Your program makes multiple LLM calls, but some seem to respond slower than others, stalling your program. 
